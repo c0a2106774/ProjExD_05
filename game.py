@@ -10,6 +10,7 @@ WIDTH = 1600  # ゲームウィンドウの幅
 HEIGHT = 900  # ゲームウィンドウの高さ
 MAIN_DIR = os.path.split(os.path.abspath(__file__))[0]
 
+
 def check_bound(obj: pg.Rect) -> tuple[bool, bool]:
     """
     オブジェクトが画面内か画面外かを判定し，真理値タプルを返す
@@ -66,6 +67,7 @@ class Bird(pg.sprite.Sprite):
             (0, +1): pg.transform.rotozoom(img, -90, 1.0),  # 下
             (+1, +1): pg.transform.rotozoom(img, -45, 1.0),  # 右下
         }
+
         self.dire = (+1, 0)
         self.image = self.imgs[self.dire]
         self.rect = self.image.get_rect()
@@ -240,6 +242,27 @@ class Enemy(pg.sprite.Sprite):
             self.state = "stop"
         self.rect.centery += self.vy
 
+class Underline:
+    """"
+    下画面に関するグラフ
+    """
+    
+    def __init__(self):
+        super().__init__()
+        self.img_gauge = pg.image.load(f"{MAIN_DIR}/fig/緑グラデ.png") #ゲージ画像のロード
+        self.p_gauge = 100 #下画面のHP
+        self.u_line = pg.surface((5,5))
+        pg.draw.line(self.u_line,(0,0,0),(0,0),(WIDTH,0))
+        #self.image = pg.Surface((2*rad, 2*rad))
+        #pg.draw.circle(self.image, color, (rad, rad), rad)
+        self.image.set_colorkey((0, 0, 0))
+        self.rect = self.image.get_rect()    
+
+    def update(self,screen: pg.surface):
+        #self.image = 
+        screen.blit(self.image, self.rect)
+
+        
 
 class Score:
     """
@@ -335,6 +358,7 @@ def main():
     emys = pg.sprite.Group()
     gravitys = pg.sprite.Group()
     shis = pg.sprite.Group()
+    underline = Underline()
 
 
     tmr = 0
@@ -402,6 +426,8 @@ def main():
         for bomb in pg.sprite.groupcollide(shis,bombs,True,True).keys():
             exps.add(Explosion(bomb,50))
 
+        
+
 
         #if len(pg.sprite.spritecollide(bird, bombs, True)) != 0:
             #bird.change_img(8, screen) # こうかとん悲しみエフェクト
@@ -409,6 +435,15 @@ def main():
            # pg.display.update()
            # time.sleep(2)
            # return
+        #screen.blit(underline,(10,450))#体力ゲージ     
+        for bombs in pg.sprite.spritecollide(underline.u_line,bombs, True): #爆弾が下の画面に衝突した時
+            underline.p_gauge -= 10 #HPを10減らす
+            #pg.draw.rect(screen,(32,32,32),[10+underline.p_gauge*2,450,(100-underline.p_gauge)*2,25]) #ダメージを受けたら短形を塗りつぶす
+            if underline.p_gauge <= 0: #HPが0以下になったら
+                bird.change_img(8, screen) # こうかとん悲しみエフェクト
+                score.update(screen)
+                pg.display.update()
+                time.sleep(2)
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):
             if bird.state == "normal":
@@ -442,8 +477,7 @@ def main():
 
 
         
-                
-       
+                  
         bird.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
