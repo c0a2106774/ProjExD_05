@@ -250,7 +250,7 @@ class Score:
     def __init__(self):
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
-        self.value = 200
+        self.value = 1000
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         self.rect = self.image.get_rect()
         self.rect.center = 100, HEIGHT-50
@@ -331,18 +331,24 @@ class Conbeam(pg.sprite.Sprite):
         ビームを生成する
         連続的なビームを放つこうかとん
         """
-        self.life = -life
-        self.image = pg.Surface((200, 900)) #ビームの大きさ
-        self.width = bird.rect.width
-        self.height = bird.rect.height
-        pg.draw.rect(self.image, (255, 255, 255), (self.width-5, self.height, self.width+5, self.height)) #ビームの幅
         self.vx, self.vy = bird.dire
+        self.life = -life
+        angle = math.degrees(math.atan2(-self.vy, self.vx))
+        self.image = pg.transform.rotozoom(pg.image.load(f"{MAIN_DIR}/fig/beam_blue.png"), angle, 2.0)
+        self.vx = math.cos(math.radians(angle))
+        self.vy = -math.sin(math.radians(angle))
         self.rect = self.image.get_rect()
-        self.rect.centerx = bird.rect.centerx + self.vx * bird.rect.width       
-        self.rect.centery = bird.rect.centery + self.vy * bird.rect.height
+        self.rect.centerx = bird.rect.centerx + self.vx * bird.rect.width * 8.5 #ビームの画像がこうかとんの画像の約8.5倍
+        self.rect.centery = bird.rect.centery + self.vy * bird.rect.height * 8.5
+        self.speed = 1
 
 
     def update(self) -> None:
+        """
+        ビームを速度ベクトルself.vx, self.vyに基づき移動させる
+        引数 screen：画面Surface
+        """
+        self.rect.move_ip(+self.speed*self.vx, +self.speed*self.vy) #ビームを動かす
         if self.life >= 0:
             self.kill()
         self.life += 1
