@@ -293,6 +293,35 @@ class Underline2(pg.sprite.Sprite):
         screen.blit(self.image, self.rect)
 
 
+class Boss(pg.sprite.Sprite):
+    """
+    ボスに関するクラス
+    """
+    imgs = [pg.image.load(f"{MAIN_DIR}/fig/boss.png") for i in range(1, 4)]
+    
+    def __init__(self):
+        super().__init__()
+        self.original_image = random.choice(__class__.imgs)
+        self.image = self.original_image  # 初期画像
+        self.rect = self.image.get_rect()
+        self.rect.center = random.randint(0, WIDTH), 0
+        self.vy = +6
+        self.bound = random.randint(50, HEIGHT/3)  # 停止位置
+        self.state = "down"  # 降下状態or停止状態
+        self.interval = random.randint(50, 50)  # 爆弾投下インターバル
+
+    def update(self):
+        """
+        敵機を速度ベクトルself.vyに基づき移動（降下）させる
+        ランダムに決めた停止位置_boundまで降下したら，_stateを停止状態に変更する
+        引数 screen：画面Surface
+        """
+        if self.rect.centery > self.bound:
+            self.vy = 0
+            self.state = "stop"
+        
+        self.rect.centery += self.vy
+ 
 
                 
 
