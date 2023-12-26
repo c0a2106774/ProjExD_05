@@ -242,25 +242,40 @@ class Enemy(pg.sprite.Sprite):
             self.state = "stop"
         self.rect.centery += self.vy
 
-class Underline:
+class Underline(pg.sprite.Sprite):
     """"
-    下画面に関するグラフ
+    HPゲージに関するグラフ
     """
     
     def __init__(self):
         super().__init__()
-        self.img_gauge = pg.image.load(f"{MAIN_DIR}/fig/緑グラデ.png") #ゲージ画像のロード
-        self.p_gauge = 100 #下画面のHP
-        self.u_line = pg.surface((5,5))
-        pg.draw.line(self.u_line,(0,0,0),(0,0),(WIDTH,0))
-        #self.image = pg.Surface((2*rad, 2*rad))
-        #pg.draw.circle(self.image, color, (rad, rad), rad)
-        self.image.set_colorkey((0, 0, 0))
-        self.rect = self.image.get_rect()    
+        self.image = pg.image.load(f"{MAIN_DIR}/fig/緑グラデ.png") #ゲージ画像のロード
+        self.hp = 800 #下画面のHP
+        self.image = pg.transform.scale(self.image,(800,30)) #画像の大きさ変更
+        self.rect = self.image.get_rect()
+        self.rect.center = WIDTH-400,HEIGHT-50
+        #self.image = pg.Surface((WIDTH,1))
+        #self.underline = pg.draw.rect(self.img_gauge,(0,0,0),(0,HEIGHT-1,WIDTH,1))
+        #self.rect = self.image.get_rect()
 
-    def update(self,screen: pg.surface):
-        #self.image = 
+    def update(self, screen: pg.Surface):
+        #self.img_gauge = self.font.render(f"HP{self.p_gauge}", 0, self.img_gauge)
+        #self.image = pg.transform.scale(self.image,(800,30))
         screen.blit(self.image, self.rect)
+
+
+class Underline2(pg.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.image = pg.Surface((WIDTH,10))
+        pg.draw.rect(self.image,(0,0,0),(0,HEIGHT-10,WIDTH,-100))
+        self.rect = self.image.get_rect()
+        self.rect.center = WIDTH/2,HEIGHT-5
+
+    def update(self, screen: pg.Surface):
+        screen.blit(self.image, self.rect)
+
+
 
         
 
@@ -359,7 +374,7 @@ def main():
     gravitys = pg.sprite.Group()
     shis = pg.sprite.Group()
     underline = Underline()
-
+    underline2 = Underline2()
 
     tmr = 0
     clock = pg.time.Clock()
@@ -434,16 +449,17 @@ def main():
             #score.update(screen)
            # pg.display.update()
            # time.sleep(2)
-           # return
-        #screen.blit(underline,(10,450))#体力ゲージ     
-        for bombs in pg.sprite.spritecollide(underline.u_line,bombs, True): #爆弾が下の画面に衝突した時
-            underline.p_gauge -= 10 #HPを10減らす
-            #pg.draw.rect(screen,(32,32,32),[10+underline.p_gauge*2,450,(100-underline.p_gauge)*2,25]) #ダメージを受けたら短形を塗りつぶす
-            if underline.p_gauge <= 0: #HPが0以下になったら
-                bird.change_img(8, screen) # こうかとん悲しみエフェクト
-                score.update(screen)
-                pg.display.update()
-                time.sleep(2)
+           # return     
+        for bomb in pg.sprite.spritecollide(underline2,bombs,True): #爆弾が下の画面に衝突した時
+            underline.hp -= 100 #HPを10減らす
+            pg.draw.rect(underline.image,(255,255,255),[underline.hp,0, 100, 100]) #ダメージを受けたら短形を塗りつぶす
+            if underline.hp <= 0: #HPが0以下になったら
+                 bird.change_img(8, screen) # こうかとん悲しみエフェクト
+                 score.update(screen)
+                 pg.display.update()
+                 time.sleep(2)
+                 return
+
 
         for bomb in pg.sprite.spritecollide(bird, bombs, True):
             if bird.state == "normal":
@@ -492,6 +508,8 @@ def main():
         shis.update()
         shis.draw(screen)
         score.update(screen)
+        underline.update(screen)
+        underline2.update(screen)
         pg.display.update()
         tmr += 1
         clock.tick(50)
