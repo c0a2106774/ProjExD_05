@@ -123,7 +123,7 @@ class Bomb(pg.sprite.Sprite):
     """
     colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
 
-    def __init__(self, emy: "Enemy", bird: Bird):
+    def __init__(self, emy:"Enemy", bird: Bird):
         """
         爆弾円Surfaceを生成する
         引数1 emy：爆弾を投下する敵機
@@ -407,6 +407,35 @@ class Shield(pg.sprite.Sprite):
         if self.life<0:
             self.kill()
         
+        
+class Alien(pg.sprite.Sprite):
+    imgal = [pg.image.load(f"{MAIN_DIR}/fig/utyujin{i}.png") for i in range(1, 3)]
+    
+    
+    def __init__(self, bird: Bird):
+        super().__init__()
+        self.image = random.choice(__class__.imgal)
+        self.rect = self.image.get_rect()
+        self.rect.center = random.randint(0, WIDTH), 0
+        self.vx, self.vy = calc_orientation(self.rect, bird.rect)  
+        
+        self.speed = 8
+        
+        
+
+    def update(self):
+        """
+        宇宙人を速度ベクトルself.vx, self.vyに基づき移動させる
+        引数 screen：画面Surface
+        """
+        
+        self.rect.move_ip(+self.speed*self.vx, +self.speed*self.vy)
+        
+        
+        
+        
+        
+    
 
 class Conbeam(pg.sprite.Sprite):
     """
@@ -458,6 +487,7 @@ def main():
     shis = pg.sprite.Group()
     conbeams = pg.sprite.Group()
     boss = pg.sprite.Group()
+    aliens = pg.sprite.Group()
 
 
     tmr = 0
@@ -519,11 +549,15 @@ def main():
          
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
-
+            
+        if tmr%300 == 0: # 300フレームに1回、宇宙人を出現させる
+            aliens.add(Alien(bird))
+            
         for emy in emys:
             if emy.state == "stop" and tmr%emy.interval == 0:
                 # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
                 bombs.add(Bomb(emy, bird))
+        
 
         
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
@@ -539,6 +573,11 @@ def main():
         for bomb in pg.sprite.groupcollide(bombs, beams, True, True).keys():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
+            
+        for alien in pg.sprite.groupcollide(aliens, beams, True, True).keys():
+            exps.add(Explosion(alien, 100))  # 爆発エフェクト
+            score.value += 5  # 5点アップ
+            bird.change_img(6, screen)  # こうかとん喜びエフェクト
         
         for bomb in pg.sprite.groupcollide(shis,bombs,True,True).keys():
             exps.add(Explosion(bomb,50))
@@ -575,6 +614,17 @@ def main():
                 bird.speed = 10  # こうかとんをうごけるようにする
                 stoptime = 0  # 動けない時間を初期化する
 
+        
+        for alien in pg.sprite.spritecollide(bird, aliens, True):
+            if bird.state == "normal":
+                bird.change_img(8, screen) # こうかとん悲しみエフェクト
+                score.update(screen)
+                pg.display.update()
+                time.sleep(2)
+                return
+            if bird.state == "hyper":
+                exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+                score.value += 5
         
         
 
@@ -619,6 +669,8 @@ def main():
         emys.draw(screen)
         bombs.update()
         bombs.draw(screen)
+        aliens.update()
+        aliens.draw(screen)
         exps.update()
         exps.draw(screen)
         gravitys.update()
