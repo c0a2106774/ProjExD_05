@@ -322,20 +322,17 @@ class Shield(pg.sprite.Sprite):
         
         
 class Alien(pg.sprite.Sprite):
-    imgs = [pg.image.load(f"{MAIN_DIR}/fig/utyujin{i}.png") for i in range(1, 3)]
+    imgal = [pg.image.load(f"{MAIN_DIR}/fig/utyujin{i}.png") for i in range(1, 3)]
+    
     
     def __init__(self, bird: Bird):
         super().__init__()
-        self.image = random.choice(__class__.imgs)
+        self.image = random.choice(__class__.imgal)
         self.rect = self.image.get_rect()
         self.rect.center = random.randint(0, WIDTH), 0
-        self.vy = +6
-        self.bound = random.randint(50, HEIGHT/2)  # 停止位置
-        self.state = "down"  # 降下状態or停止状態
-        self.interval = random.randint(50, 300)  # 爆弾投下インターバル
         self.vx, self.vy = calc_orientation(self.rect, bird.rect)  
         
-        self.speed = 6
+        self.speed = 8
         
         
 
@@ -344,12 +341,13 @@ class Alien(pg.sprite.Sprite):
         宇宙人を速度ベクトルself.vx, self.vyに基づき移動させる
         引数 screen：画面Surface
         """
+        
         self.rect.move_ip(+self.speed*self.vx, +self.speed*self.vy)
-        if self.rect.centery > self.bound:
-            self.vy = 0
-            self.state = "stop"
-        if check_bound(self.rect) != (True, True):
-            self.kill()
+        
+        
+        
+        
+        
     
 
 def main():
@@ -416,20 +414,14 @@ def main():
         if tmr%200 == 0:  # 200フレームに1回，敵機を出現させる
             emys.add(Enemy())
             
-        if tmr%200 == 0: # 200フレームに1回、宇宙人を出現させる
-             aliens.add(Alien(bird))
+        if tmr%300 == 0: # 300フレームに1回、宇宙人を出現させる
+            aliens.add(Alien(bird))
             
         for emy in emys:
-            # if tmr%400 == 0: # 400フレームに1回、宇宙人を出現させる
-            #     aliens.add(Alien(emy, bird))
             if emy.state == "stop" and tmr%emy.interval == 0:
                 # 敵機が停止状態に入ったら，intervalに応じて爆弾投下
                 bombs.add(Bomb(emy, bird))
-        """""
-        for alien in aliens:
-            if alien.state == "stop" and tmr%emy.interval == 0: # 宇宙人が停止状態に入り、intervalに応じて移動再開
-                aliens.rect.move_ip(+self.speed*self.vx, +self.speed*self.vy)
-        """""
+        
 
         
         for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
@@ -476,6 +468,17 @@ def main():
             pg.display.update()
             time.sleep(2)
             return
+        
+        for alien in pg.sprite.spritecollide(bird, aliens, True):
+            if bird.state == "normal":
+                bird.change_img(8, screen) # こうかとん悲しみエフェクト
+                score.update(screen)
+                pg.display.update()
+                time.sleep(2)
+                return
+            if bird.state == "hyper":
+                exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+                score.value += 5
         
         
 
