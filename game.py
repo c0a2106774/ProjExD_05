@@ -95,25 +95,24 @@ class Bird(pg.sprite.Sprite):
         引数1 key_lst：押下キーの真理値リスト
         引数2 screen：画面Surface
         """
-        if self.speed == 10:
-            sum_mv = [0, 0]
+        sum_mv = [0, 0]
+        for k, mv in __class__.delta.items():
+            if key_lst[k]:
+                self.rect.move_ip(+self.speed*mv[0], +self.speed*mv[1])
+                sum_mv[0] += mv[0]
+                sum_mv[1] += mv[1]
+        if check_bound(self.rect) != (True, True):
             for k, mv in __class__.delta.items():
                 if key_lst[k]:
-                    self.rect.move_ip(+self.speed*mv[0], +self.speed*mv[1])
-                    sum_mv[0] += mv[0]
-                    sum_mv[1] += mv[1]
-            if check_bound(self.rect) != (True, True):
-                for k, mv in __class__.delta.items():
-                    if key_lst[k]:
-                        self.rect.move_ip(-self.speed*mv[0], -self.speed*mv[1])
-            if not (sum_mv[0] == 0 and sum_mv[1] == 0):
-                self.dire = tuple(sum_mv)
-                self.image = self.imgs[self.dire]
-            if self.state == "hyper":
-                self.image = pg.transform.laplacian(self.image)
-                self.hyper_life -= 1
-            if self.hyper_life < 0:
-                self.state = "normal"
+                    self.rect.move_ip(-self.speed*mv[0], -self.speed*mv[1])
+        if not (sum_mv[0] == 0 and sum_mv[1] == 0):
+            self.dire = tuple(sum_mv)
+            self.image = self.imgs[self.dire]
+        if self.state == "hyper":
+            self.image = pg.transform.laplacian(self.image)
+            self.hyper_life -= 1
+        if self.hyper_life < 0:
+            self.state = "normal"
         screen.blit(self.image, self.rect)
 
 
@@ -137,27 +136,12 @@ class Bomb(pg.sprite.Sprite):
         pg.draw.circle(self.image, color, (rad, rad), rad)
         self.image.set_colorkey((0, 0, 0))
         self.rect = self.image.get_rect()
-        counter = random.randint(0,1)
         # 爆弾を投下するemyから見た攻撃対象のbirdの方向を計算
-        if bird.speed == 10:#こうかとんが被弾していないとき
-            if counter == 1:  # こうかとんに爆弾が向かっていく
-                self.vx, self.vy = calc_orientation(emy.rect, bird.rect)  
-                self.rect.centerx = emy.rect.centerx
-                self.rect.centery = emy.rect.centery+emy.rect.height/2
-                self.speed = 15
-                self.state = "active"
-            else:  # 爆弾が下に向かってく
-                self.vx, self.vy = 0,+1  # 爆弾は真下に落ちるようにする
-                self.rect.centerx = emy.rect.centerx
-                self.rect.centery = emy.rect.centery+emy.rect.height/2
-                self.speed = 10
-                self.state = "active"
-        else: # こうかとんが爆弾を被弾したとき
-            self.vx, self.vy = 0,+3  # 爆弾は真下に落ちるようにする
-            self.rect.centerx = emy.rect.centerx
-            self.rect.centery = emy.rect.centery+emy.rect.height/2
-            self.speed = 10
-            self.state = "active"
+        self.vx, self.vy = calc_orientation(emy.rect, bird.rect)  
+        self.rect.centerx = emy.rect.centerx
+        self.rect.centery = emy.rect.centery+emy.rect.height/2
+        self.speed = 6
+        self.state = "active"
 
     def update(self):
         """
@@ -181,7 +165,7 @@ class Beam(pg.sprite.Sprite):
         super().__init__()
         self.vx, self.vy = bird.dire
         angle = math.degrees(math.atan2(-self.vy, self.vx))
-        self.image = pg.transform.rotozoom(pg.image.load(f"{MAIN_DIR}/fig/beam.png"), angle, 2.0)            
+        self.image = pg.transform.rotozoom(pg.image.load(f"{MAIN_DIR}/fig/beam.png"), angle, 2.0)
         self.vx = math.cos(math.radians(angle))
         self.vy = -math.sin(math.radians(angle))
         self.rect = self.image.get_rect()
@@ -217,7 +201,7 @@ class Explosion(pg.sprite.Sprite):
         self.image = self.imgs[0]
         self.rect = self.image.get_rect(center=obj.rect.center)
         self.life = life
-        
+
     def update(self):
         """
         爆発時間を1減算した爆発経過時間_lifeに応じて爆発画像を切り替えることで
@@ -243,7 +227,7 @@ class Enemy(pg.sprite.Sprite):
         self.vy = +6
         self.bound = random.randint(50, HEIGHT/2)  # 停止位置
         self.state = "down"  # 降下状態or停止状態
-        self.interval = random.randint(50, 200)  # 爆弾投下インターバル
+        self.interval = random.randint(50, 300)  # 爆弾投下インターバル
 
     def update(self):
         """
@@ -266,7 +250,7 @@ class Score:
     def __init__(self):
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
-        self.value = 1000
+        self.value = 0
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         self.rect = self.image.get_rect()
         self.rect.center = 100, HEIGHT-50
@@ -377,7 +361,7 @@ def main():
     #bg_img = pg.image.load(f"{MAIN_DIR}/fig/pg_bg.jpg")
     bg_img = pg.transform.rotozoom(pg.image.load(f"{MAIN_DIR}/fig/pg_bg.jpg"), 0, 3.5)
     score = Score()
-    stoptime = 0  # こうかとんが動けなくなる時間を格納
+    
     bird = Bird(3, (900, 400))
     bombs = pg.sprite.Group()
     beams = pg.sprite.Group()
@@ -469,10 +453,10 @@ def main():
         for bomb in pg.sprite.spritecollide(bird, bombs, True):
             if bird.state == "normal":
                 bird.change_img(8, screen) # こうかとん悲しみエフェクト
-                bird.speed = 0  # こうかとんのスピードを0にして動けないようにする
-                stoptime = 0  # 新しく爆弾に当たったら止まる時間を0にする
                 score.update(screen)
                 pg.display.update()
+                time.sleep(2)
+                return
             if bird.state == "hyper":
                 exps.add(Explosion(bomb, 50))  # 爆発エフェクト
                 score.value += 1
@@ -483,13 +467,8 @@ def main():
             bird.change_img(8, screen) # こうかとん悲しみエフェクト
             score.update(screen)
             pg.display.update()
-        
-        if bird.speed == 0:  #爆弾に当たってこうかとんが動かなくなったら
-            stoptime+=1  # 動けない時間のカウントをはじめる
-            if stoptime >= 80:  # 動けない時間が80を超えたら
-                bird.speed = 10  # こうかとんをうごけるようにする
-                stoptime = 0  # 動けない時間を初期化する
-
+            time.sleep(2)
+            return
         
         
 
