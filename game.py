@@ -250,7 +250,7 @@ class Score:
     def __init__(self):
         self.font = pg.font.Font(None, 50)
         self.color = (0, 0, 255)
-        self.value = 0
+        self.value = 1000
         self.image = self.font.render(f"Score: {self.value}", 0, self.color)
         self.rect = self.image.get_rect()
         self.rect.center = 100, HEIGHT-50
@@ -321,6 +321,40 @@ class Shield(pg.sprite.Sprite):
             self.kill()
         
 
+class Conbeam(pg.sprite.Sprite):
+    """
+    連続的なビームに関するクラス
+    """
+    def __init__(self,bird: Bird, life: int=100):
+        super().__init__()
+        """
+        ビームを生成する
+        連続的なビームを放つこうかとん
+        """
+        self.vx, self.vy = bird.dire
+        self.life = -life
+        angle = math.degrees(math.atan2(-self.vy, self.vx))
+        self.image = pg.transform.rotozoom(pg.image.load(f"{MAIN_DIR}/fig/beam_blue.png"), angle, 2.0)
+        self.vx = math.cos(math.radians(angle))
+        self.vy = -math.sin(math.radians(angle))
+        self.rect = self.image.get_rect()
+        self.rect.centerx = bird.rect.centerx + self.vx * bird.rect.width * 8.5 #ビームの画像がこうかとんの画像の約8.5倍
+        self.rect.centery = bird.rect.centery + self.vy * bird.rect.height * 8.5
+        self.speed = 1
+
+
+    def update(self) -> None:
+        """
+        ビームを速度ベクトルself.vx, self.vyに基づき移動させる
+        引数 screen：画面Surface
+        """
+        self.rect.move_ip(+self.speed*self.vx, +self.speed*self.vy) #ビームを動かす
+        if self.life >= 0:
+            self.kill()
+        self.life += 1
+        return
+
+
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -335,6 +369,7 @@ def main():
     emys = pg.sprite.Group()
     gravitys = pg.sprite.Group()
     shis = pg.sprite.Group()
+    conbeams = pg.sprite.Group()
 
 
     tmr = 0
@@ -362,6 +397,11 @@ def main():
             if event.type == pg.KEYDOWN and event.key == pg.K_RETURN and score.value >= 200:
                 gravitys.add(Gravity())
                 score.value -= 200
+
+            #100スコアを消費して連続的なビームを打つ
+            if event.type == pg.KEYDOWN and event.key == pg.K_b and score.value >= 100:
+                conbeams.add(Conbeam(bird))
+                score.value -= 100
 
         if  len(gravitys) == 0:
             screen.blit(bg_img, [0, 0])
@@ -440,6 +480,15 @@ def main():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
 
+        
+        for emy in pg.sprite.groupcollide(emys, conbeams, True, False).keys():
+            exps.add(Explosion(emy, 100))  # 爆発エフェクト
+            score.value += 10  # 10点アップ
+            bird.change_img(6, screen)  # こうかとん喜びエフェクト
+        for bomb in pg.sprite.groupcollide(bombs, conbeams, True, False).keys():
+            exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+            score.value += 1  # 1点アップ
+
 
         
                 
@@ -455,6 +504,8 @@ def main():
         exps.draw(screen)
         gravitys.update()
         gravitys.draw(screen)
+        conbeams.update()
+        conbeams.draw(screen)
         shis.update()
         shis.draw(screen)
         score.update(screen)
