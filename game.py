@@ -599,6 +599,15 @@ def main():
             exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             score.value += 1  # 1点アップ
 
+        
+        for emy in pg.sprite.groupcollide(emys, conbeams, True, False).keys():
+            exps.add(Explosion(emy, 100))  # 爆発エフェクト
+            score.value += 10  # 10点アップ
+            bird.change_img(6, screen)  # こうかとん喜びエフェクト
+        for bomb in pg.sprite.groupcollide(bombs, conbeams, True, False).keys():
+            exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+            score.value += 1  # 1点アップ
+
 
         
                 
@@ -631,4 +640,4 @@ if __name__ == "__main__":
     main()
     pg.quit()
     sys.exit()
-    
+    sys.exit()
