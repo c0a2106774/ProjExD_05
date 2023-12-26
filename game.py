@@ -137,20 +137,27 @@ class Bomb(pg.sprite.Sprite):
         pg.draw.circle(self.image, color, (rad, rad), rad)
         self.image.set_colorkey((0, 0, 0))
         self.rect = self.image.get_rect()
+        counter = random.randint(0,1)
         # 爆弾を投下するemyから見た攻撃対象のbirdの方向を計算
-        if bird.speed == 10:  # こうかとんが爆弾を被弾していないとき
-            self.vx, self.vy = calc_orientation(emy.rect, bird.rect)  
-            self.rect.centerx = emy.rect.centerx
-            self.rect.centery = emy.rect.centery+emy.rect.height/2
-            self.speed = 15
-            self.state = "active"
-        else:  # こうかとんが爆弾を被弾したとき
+        if bird.speed == 10:#こうかとんが被弾していないとき
+            if counter == 1:  # こうかとんに爆弾が向かっていく
+                self.vx, self.vy = calc_orientation(emy.rect, bird.rect)  
+                self.rect.centerx = emy.rect.centerx
+                self.rect.centery = emy.rect.centery+emy.rect.height/2
+                self.speed = 15
+                self.state = "active"
+            else:  # 爆弾が下に向かってく
+                self.vx, self.vy = 0,+1  # 爆弾は真下に落ちるようにする
+                self.rect.centerx = emy.rect.centerx
+                self.rect.centery = emy.rect.centery+emy.rect.height/2
+                self.speed = 10
+                self.state = "active"
+        else: # こうかとんが爆弾を被弾したとき
             self.vx, self.vy = 0,+3  # 爆弾は真下に落ちるようにする
             self.rect.centerx = emy.rect.centerx
             self.rect.centery = emy.rect.centery+emy.rect.height/2
             self.speed = 10
             self.state = "active"
-
 
     def update(self):
         """
